@@ -15,11 +15,11 @@ TTL="60"
 
 case $IPv in
 	4)
-		RR=$(curl -4 -s https://api.cloudflare.com/cdn-cgi/trace | awk -F= '/ip=([0-9.]+)/ {print $2}')
+		NEWRR=$(curl -4 -s https://api.cloudflare.com/cdn-cgi/trace | awk -F= '/ip=([0-9.]+)/ {print $2}')
 		TYPE="A"
 	;;
 	6)
-		RR=$(curl -6 -s https://api.cloudflare.com/cdn-cgi/trace | awk -F= '/ip=([0-9a-fA-F:]+)/ {print $2}')
+		NEWRR=$(curl -6 -s https://api.cloudflare.com/cdn-cgi/trace | awk -F= '/ip=([0-9a-fA-F:]+)/ {print $2}')
 		TYPE="AAAA"
 	;;
 	*)
@@ -27,19 +27,25 @@ case $IPv in
 		exit 1
 	;;
 esac
-if [ $RR = $(dig $DOMAIN +short) ]; then
+OLDRR=$(dig $DOMAIN +short)
+if [ -z $OLDRR ]; then
+	echo "ERROR: Can't get old ip addr"
+	echo "Exit...."
+	exit 1
+fi
+if [ $NEWRR = $OLDRR ]; then
 	echo "IP NOT CHANGE"
 	echo "Exit...."
 	exit 0
 else
 	echo "Wait....."
 fi;
-echo $RR
+echo $NEWRR
 nsupdate -v -k $TSIG << EOF
 server $NS
 zone $ZONE
 update delete $DOMAIN $TYPE
-update add $DOMAIN $TTL $TYPE $RR
+update add $DOMAIN $TTL $TYPE $NEWRR
 send
 EOF
 
