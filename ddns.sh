@@ -28,7 +28,7 @@ case $IPv in
 	;;
 esac
 OLDRR=$(dig $DOMAIN +short)
-if [ -z $OLDRR ]; then
+if [ -z $OLDRR ] || [ -z $NEWRR]; then
 	echo "ERROR: Can't get old ip addr"
 	echo "Exit...."
 	exit 1
